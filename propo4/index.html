@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comptoir KALINE 3D</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            font-family: 'Arial', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        h1 {
+            color: #4a4a7e;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background-color: #4a4a7e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #373764;
+        }
+        
+        #canvas-container {
+            position: relative;
+            width: 100%;
+            height: 80vh;
+            max-height: 600px;
+            margin: 0 auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+        
+        .specs {
+            margin-top: 30px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .specs h2 {
+            color: #4a4a7e;
+            margin-top: 0;
+        }
+        
+        .specs ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .specs li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .specs li:before {
+            content: "•";
+            color: #d4b8bf;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-right: 10px;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #4a4a7e;
+            font-weight: bold;
+        }
+        .nav-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .nav-bar a {
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 16px;
+            margin: 0 5px;
+            font-size: 14px;
+            background-color: #444;
+            border-radius: 3px;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+        .nav-bar a:hover {
+            background-color: #666;
+        }
+        .controls {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Comptoir d'Animation KALINE pour Parapharmacies - Visualisation 3D</h1>
+        <div class="nav-bar">
+            <a href="../index.html">Proposition 1</a>
+            <a href="index.html">Proposition 2</a>
+            <a href="../propo3/index.html">Proposition 3</a>
+            <a href="../propo4/index.html">Proposition 4</a>
+        </div>
+        <div class="controls">
+            <button id="view-front">Vue de Face</button>
+            <button id="view-angle">Vue en Angle</button>
+            <button id="view-side">Vue de Côté</button>
+            <button id="toggle-fold">Plier/Déplier</button>
+            <button id="toggle-storage">Afficher/Cacher Stockage</button>
+            <button id="rotate-model">Rotation 360°</button>
+        </div>
+        
+        <div id="canvas-container">
+            <div class="loading">Chargement du modèle 3D...</div>
+        </div>
+        
+        <div class="specs">
+            <h2>Caractéristiques du Comptoir KALINE</h2>
+            <ul>
+                <li>Design premium conforme à la charte graphique KALINE</li>
+                <li>Finition qualitative adaptée à une marque dermo-cosmétique</li>
+                <li>Structure légère, pliable et facilement transportable</li>
+                <li>Compartiment discret pour les consommables de la conseillère</li>
+                <li>3 emplacements pour visuels marketing interchangeables avec logo KALINE</li>
+                <li>Dimensions: hauteur 180cm × largeur 80cm (déplié)</li>
+                <li>Matériaux de haute qualité avec finition élégante</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Variables for Three.js
+            let scene, camera, renderer, counterModel;
+            let isAnimating = false;
+            let isFolded = false;
+            let isStorageVisible = false;
+            let isRotating = false;
+            let rotationInterval;
+            
+            // Colors
+            const colors = {
+                main: 0x4a4a7e,
+                accent: 0xd4b8bf,
+                light: 0xf6f2f5,
+                dark: 0x2e2e4e,
+                highlight: 0xe8c0cb,
+                white: 0xffffff
+            };
+            
+            // Initialize Three.js scene
+            function init() {
+                // Create scene
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0xf5f5f5);
+                
+                // Camera
+                camera = new THREE.PerspectiveCamera(50, document.getElementById('canvas-container').offsetWidth / document.getElementById('canvas-container').offsetHeight, 0.1, 1000);
+                camera.position.set(0, 0, 5);
+                
+                // Renderer
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(document.getElementById('canvas-container').offsetWidth, document.getElementById('canvas-container').offsetHeight);
+                renderer.shadowMap.enabled = true;
+                
+                // Clear loading message and append renderer
+                document.getElementById('canvas-container').innerHTML = '';
+                document.getElementById('canvas-container').appendChild(renderer.domElement);
+                
+                // Lights
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(5, 10, 7);
+                directionalLight.castShadow = true;
+                scene.add(directionalLight);
+                
+                const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+                fillLight.position.set(-5, 5, -5);
+                scene.add(fillLight);
+                
+                // Create Counter Model
+                createCounter();
+                
+                // Initial view
+                setViewFront();
+                
+                // Start animation
+                animate();
+                
+                // Handle window resize
+                window.addEventListener('resize', onWindowResize);
+            }
+            
+            function createCounter() {
+                // Create group for the entire counter
+                counterModel = new THREE.Group();
+                
+                // Base
+                const baseGeometry = new THREE.BoxGeometry(2, 0.1, 0.8);
+                const baseMaterial = new THREE.MeshPhongMaterial({ color: colors.dark });
+                const base = new THREE.Mesh(baseGeometry, baseMaterial);
+                base.position.y = -1.7;
+                base.castShadow = true;
+                base.receiveShadow = true;
+                counterModel.add(base);
+                
+                // Main panel
+                const mainPanelGeometry = new THREE.BoxGeometry(1.6, 3, 0.05);
+                const mainPanelMaterial = new THREE.MeshPhongMaterial({ 
+                    color: colors.white,
+                    shininess: 50
+                });
+                const mainPanel = new THREE.Mesh(mainPanelGeometry, mainPanelMaterial);
+                mainPanel.position.y = 0;
+                mainPanel.position.z = 0;
+                mainPanel.castShadow = true;
+                mainPanel.receiveShadow = true;
+                counterModel.add(mainPanel);
+                
+                // Header with logo
+                const headerGeometry = new THREE.BoxGeometry(1.6, 0.3, 0.05);
+                const headerMaterial = new THREE.MeshPhongMaterial({ color: colors.main });
+                const header = new THREE.Mesh(headerGeometry, headerMaterial);
+                header.position.y = 1.65;
+                header.position.z = 0;
+                counterModel.add(header);
+                
+                // Left panel
+                const leftPanelGeometry = new THREE.BoxGeometry(0.05, 3, 0.6);
+                const leftPanelMaterial = new THREE.MeshPhongMaterial({ color: colors.accent });
+                const leftPanel = new THREE.Mesh(leftPanelGeometry, leftPanelMaterial);
+                leftPanel.position.x = -0.825;
+                leftPanel.position.y = 0;
+                leftPanel.position.z = 0.275;
+                leftPanel.userData.isPanel = true;
+                leftPanel.userData.side = 'left';
+                counterModel.add(leftPanel);
+                
+                // Right panel
+                const rightPanelGeometry = new THREE.BoxGeometry(0.05, 3, 0.6);
+                const rightPanelMaterial = new THREE.MeshPhongMaterial({ color: colors.accent });
+                const rightPanel = new THREE.Mesh(rightPanelGeometry, rightPanelMaterial);
+                rightPanel.position.x = 0.825;
+                rightPanel.position.y = 0;
+                rightPanel.position.z = 0.275;
+                rightPanel.userData.isPanel = true;
+                rightPanel.userData.side = 'right';
+                counterModel.add(rightPanel);
+                
+                // Visual displays
+                createVisualDisplay(0, 1, 1.4, 0.8, "Soins Visage");
+                createVisualDisplay(0, -0.2, 1.4, 0.6, "Nouveautés");
+                createVisualDisplay(0, -1, 1.4, 0.5, "Anti-âge");
+                
+                // Storage compartment
+                createStorageCompartment();
+                
+                scene.add(counterModel);
+            }
+            
+            function createVisualDisplay(x, y, width, height, label) {
+                const group = new THREE.Group();
+                
+                // Visual background
+                const visualGeometry = new THREE.BoxGeometry(width, height, 0.01);
+                const visualMaterial = new THREE.MeshPhongMaterial({ 
+                    color: colors.light,
+                    shininess: 30
+                });
+                const visual = new THREE.Mesh(visualGeometry, visualMaterial);
+                visual.position.z = 0.03;
+                group.add(visual);
+                
+                // Visual border
+                const borderGeometry = new THREE.BoxGeometry(width + 0.02, height + 0.02, 0.005);
+                const borderMaterial = new THREE.MeshPhongMaterial({ color: colors.accent });
+                const border = new THREE.Mesh(borderGeometry, borderMaterial);
+                border.position.z = 0.025;
+                group.add(border);
+                
+                group.position.set(x, y, 0);
+                counterModel.add(group);
+            }
+            
+            function createStorageCompartment() {
+                const storageGeometry = new THREE.BoxGeometry(1.2, 0.3, 0.2);
+                const storageMaterial = new THREE.MeshPhongMaterial({ 
+                    color: colors.dark,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const storage = new THREE.Mesh(storageGeometry, storageMaterial);
+                storage.position.y = 0.5;
+                storage.position.z = 0.1;
+                storage.visible = false;
+                storage.userData.isStorage = true;
+                counterModel.add(storage);
+            }
+            
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                if (isRotating && !isAnimating) {
+                    counterModel.rotation.y += 0.01;
+                }
+                
+                renderer.render(scene, camera);
+            }
+            
+            function setViewFront() {
+                if (isAnimating) return;
+                isAnimating = true;
+                isRotating = false;
+                clearInterval(rotationInterval);
+                
+                gsap.to(camera.position, {
+                    x: 0,
+                    y: 0,
+                    z: 5,
+                    duration: 1,
+                    onComplete: () => {
+                        isAnimating = false;
+                    }
+                });
+                
+                gsap.to(counterModel.rotation, {
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                    duration: 1
+                });
+            }
+            
+            function setViewAngle() {
+                if (isAnimating) return;
+                isAnimating = true;
+                isRotating = false;
+                clearInterval(rotationInterval);
+                
+                gsap.to(camera.position, {
+                    x: 3,
+                    y: 1,
+                    z: 4,
+                    duration: 1,
+                    onComplete: () => {
+                        isAnimating = false;
+                    }
+                });
+                
+                gsap.to(counterModel.rotation, {
+                    x: 0,
+                    y: Math.PI / 4,
+                    z: 0,
+                    duration: 1
+                });
+            }
+            
+            function setViewSide() {
+                if (isAnimating) return;
+                isAnimating = true;
+                isRotating = false;
+                clearInterval(rotationInterval);
+                
+                gsap.to(camera.position, {
+                    x: 5,
+                    y: 0,
+                    z: 0,
+                    duration: 1,
+                    onComplete: () => {
+                        isAnimating = false;
+                    }
+                });
+                
+                gsap.to(counterModel.rotation, {
+                    x: 0,
+                    y: Math.PI / 2,
+                    z: 0,
+                    duration: 1
+                });
+            }
+            
+            function toggleFold() {
+                if (isAnimating) return;
+                isAnimating = true;
+                
+                counterModel.traverse(function(child) {
+                    if (child.userData.isPanel) {
+                        const targetX = isFolded ? 
+                            (child.userData.side === 'left' ? -0.825 : 0.825) : 
+                            (child.userData.side === 'left' ? -0.4 : 0.4);
+                        
+                        const targetZ = isFolded ? 0.275 : 0;
+                        
+                        gsap.to(child.position, {
+                            x: targetX,
+                            z: targetZ,
+                            duration: 1
+                        });
+                    }
+                });
+                
+                isFolded = !isFolded;
+                
+                setTimeout(() => {
+                    isAnimating = false;
+                }, 1000);
+            }
+            
+            function toggleStorage() {
+                counterModel.traverse(function(child) {
+                    if (child.userData.isStorage) {
+                        child.visible = !child.visible;
+                        isStorageVisible = child.visible;
+                    }
+                });
+            }
+            
+            function toggleRotation() {
+                isRotating = !isRotating;
+                
+                if (!isRotating) {
+                    clearInterval(rotationInterval);
+                }
+            }
+            
+            function onWindowResize() {
+                camera.aspect = document.getElementById('canvas-container').offsetWidth / document.getElementById('canvas-container').offsetHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(document.getElementById('canvas-container').offsetWidth, document.getElementById('canvas-container').offsetHeight);
+            }
+            
+            // Initialize the scene
+            init();
+            
+            // Event listeners
+            document.getElementById('view-front').addEventListener('click', setViewFront);
+            document.getElementById('view-angle').addEventListener('click', setViewAngle);
+            document.getElementById('view-side').addEventListener('click', setViewSide);
+            document.getElementById('toggle-fold').addEventListener('click', toggleFold);
+            document.getElementById('toggle-storage').addEventListener('click', toggleStorage);
+            document.getElementById('rotate-model').addEventListener('click', toggleRotation);
+        });
+    </script>
+</body>
+</html>

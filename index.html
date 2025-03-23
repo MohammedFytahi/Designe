@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KALINE Advanced 3D Luminary Stand</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: Arial, sans-serif;
+        }
+        canvas { 
+            display: block; 
+        }
+        .nav-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .nav-bar a {
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 16px;
+            margin: 0 5px;
+            font-size: 14px;
+            background-color: #444;
+            border-radius: 3px;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+        .nav-bar a:hover {
+            background-color: #666;
+        }
+        .controls {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            font-size: 14px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        button:hover { 
+            background-color: #555; 
+        }
+    </style>
+</head>
+<body>
+            
+
+    <div class="nav-bar">
+        <a href="index.html">Proposition 1</a>
+        <a href="propo2/index.html">Proposition 2</a>
+        <a href="propo3/index.html">Proposition 3</a>
+        <a href="propo4/index.html">Proposition 4</a>
+    </div>
+
+    <div class="controls">
+        <button id="toggle-btn">Plier / Déplier</button>
+        <button id="update-visuals-btn">Mettre à jour visuels</button>
+        <button id="toggle-compartment-btn">Ouvrir/Fermer compartiment</button>
+        <button id="rotate-btn">Rotation auto</button>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
